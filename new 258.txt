@@ -1,0 +1,134 @@
+DECLARE @TimeLimit DATETIME = DATEADD(HOUR, -6, GETDATE()); -- Configurable time limit
+
+DECLARE @GraceTime DATETIME = DATEADD(MINUTE, -5, GETDATE()); -- Configurable time limit
+
+WITH LatestTimestamps AS (
+
+    SELECT 
+
+        sd.source_delivery_code,
+
+  sd.source_location_id,
+
+        sd.delivery_id,
+
+        sm.movement_id,
+
+        sd.created_on AS delivery_time,
+
+        sm.created_on AS movement_time,
+
+        msi.created_on AS stock_inv_time,
+
+        ar.alcs_time,
+
+        ar.alco_time
+
+    FROM OSCS.stock_delivery sd
+
+    LEFT JOIN OSCS.stock_movement sm ON sd.delivery_id = sm.delivery_id
+
+    LEFT JOIN OSCS.movement_stock_inv msi ON sm.movement_id = msi.movement_id
+
+    LEFT JOIN (
+
+        SELECT 
+
+            movement_id, 
+
+            upc_ean,
+
+            MAX(CASE WHEN source = 'ALCS' THEN created_on ELSE NULL END) AS alcs_time,
+
+            MAX(CASE WHEN source = 'ALCO' THEN created_on ELSE NULL END) AS alco_time
+
+        FROM (
+
+            SELECT movement_id, upc_ean, created_on, 'ALCS' AS source FROM ALCS.alloc_req_product
+
+            UNION ALL
+
+            SELECT movement_id, upc_ean, created_on, 'ALCO' AS source FROM ALCO.alloc_req_product
+
+        ) AS combined
+
+        GROUP BY movement_id, upc_ean
+
+    ) ar ON msi.movement_id = ar.movement_id AND msi.upc_ean = ar.upc_ean
+
+where msi.from_status_id is NULL and msi.to_status_id = 111 
+
+)
+
+SELECT 
+
+    source_delivery_code,
+
+source_location_id,
+
+    delivery_id,
+
+    movement_id,
+
+    MAX(delivery_time) as latest_delivery_time,
+
+    MAX(movement_time) as latest_movement_time,
+
+    MAX(stock_inv_time) as latest_stock_inv_time,
+
+    MAX(alcs_time) as latest_alcs_time,
+
+    MAX(alco_time) as latest_alco_time
+
+FROM LatestTimestamps
+
+WHERE 
+
+    delivery_time >= @TimeLimit AND
+
+delivery_time <= @GraceTime AND
+
+    (
+
+        (movement_time IS NULL) OR
+
+        (stock_inv_time IS NULL) OR
+
+        (alcs_time IS NULL) OR
+
+        (alco_time IS NULL)
+
+    )
+
+group by source_delivery_code,delivery_id,movement_id,source_location_id
+
+ORDER BY source_delivery_code, delivery_id, movement_id;
+ 
+select top 5 * from oscs.event_log_msg_xml  order by created_on desc
+ 
+Select top(40) a.source_delivery_code, d.receipt_date, d.source_location_id, b.movement_id as
+
+OSCS_Movement_id,d.movement_id as alco_movement_id,count(c.upc_ean) No_of_upc,sum(c.quantity) Quantity,
+
+datediff(mi,cast(a.created_on as datetime),cast(a.updated_on as datetime)) Total_minute,MIN(b.created_on)
+
+ASO_IN,MAX(d.updated_on) ASO_OUT,d.status_id , e.description from oscs.stock_delivery a inner join oscs.stock_movement b join
+
+oscs.movement_stock_inv c on b.movement_id=c.movement_id on a.event_id=b.event_id full join alco.alloc_req_product d on 
+
+c.movement_id=d.movement_id and c.upc_ean=d.upc_ean full join alco.product_status e on d.status_id = e.status_id where
+
+b.created_on between concat(convert(varchar(10), getdate()-1, 121),' 03:00:00:000') and concat(convert(varchar(10),
+
+dateadd(day,1,getdate()), 121),' 03:00:00:000') and c.is_test=0 and c.to_status_id=111 and intended_allocation_source <> '%Manual%'
+
+and d.mark_for_deletion=0and d.status_id  not in (112) 
+
+--and a.source_location_id = 5012068039422
+
+--and a.source_delivery_code like 'BN%' -- and d.status_id not in (115, 114, 112)
+
+group by b.movement_id,a.source_delivery_code,d.movement_id,d.status_id,e.description,
+
+d.source_location_id,datediff(mi,cast(a.created_on as datetime),cast(a.updated_on as datetime)), d.receipt_date order by ASO_OUT desc ;
+ 
