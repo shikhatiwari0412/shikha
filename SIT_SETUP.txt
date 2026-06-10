@@ -4,7 +4,7 @@ DefaultEndpointsProtocol=https;AccountName=fodeunsitasosta0001;AccountKey=l3/txz
 
 aso prod storage account:
 
-AccountName=fodeunprodasosta0001;AccountKey=OBRmYBb1FI0ZwHOLKA+zbN5RyPTEqZJpwb2EgJMjLgq5ziYE3Bb7DA+U2bL9RZYdr4EKIT9SV19zWWbY63kz5A==;EndpointSuffix=core.windows.net;DefaultEndpointsProtocol=https;
+AccountName=fodeunprodasosta0001;AccountKey=HJYC0dQ/X4nnzPlMOc8XqzF4UqdsOXrEt14QJKeeo2nOkpiZ9D9SOAAkd40blhYMJTx4GpdXMmHX+AStLhq5mg==;EndpointSuffix=core.windows.net;DefaultEndpointsProtocol=https;
 
 aso pre-prod storage account:
 
@@ -13,4 +13,9 @@ DefaultEndpointsProtocol=https;AccountName=fodeunpprasosta0001;AccountKey=xHxlOh
 aso dev storage account:
 
 DefaultEndpointsProtocol=https;AccountName=fodeundevasosta0001;AccountKey=wfGbGqEkdTVvdACqhrIBC2iKUeGa1YNucrabEwoBEP4SQBIBgXWwl8v+3Nq6npSR6qyuPMFgPwVl+AStPnQx/g==;EndpointSuffix=core.windows.net;
+
+
+
+
+
  
